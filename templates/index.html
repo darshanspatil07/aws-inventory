@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+
+        function fetchItems() {
+            fetch(`${API_URL}/items`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('items-table-body');
+                    tableBody.innerHTML = '';
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.Name}</td>
+                            <td>${item.Quantity}</td>
+                            <td>
+                                <button class="btn btn-warning" onclick="editItem('${item.ItemId}')">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteItem('${item.ItemId}')">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                });
+        }
+
+        function addItem() {
+            const name = document.getElementById('name').value;
+            const quantity = document.getElementById('quantity').value;
+
+            fetch(`${API_URL}/items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({name: name, quantity: quantity})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                fetchItems();
+            });
+        }
+
+        function editItem(itemId) {
+            const name = prompt('Enter new name:');
+            const quantity = prompt('Enter new quantity:');
+
+            fetch(`${API_URL}/items`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ItemId: itemId, Name: name, Quantity: quantity})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                fetchItems();
+            });
+        }
+
+        function deleteItem(itemId) {
+            fetch(`${API_URL}/items`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ItemId: itemId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                fetchItems();
+            });
+        }
+
+        function createOrder() {
+            const orderItems = [
+                {'ItemId': 'item1', 'Quantity': 2},
+                {'ItemId': 'item2', 'Quantity': 3}
+            ];
+
+            fetch(`${API_URL}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({items: orderItems})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                fetchOrderHistory();
+            });
+        }
+
+        function fetchOrderHistory() {
+            fetch(`${API_URL}/orders`)
+                .then(response => response.json())
+                .then(data => {
+                    const orderTableBody = document.getElementById('order-history-table-body');
+                    orderTableBody.innerHTML = '';
+                    data.forEach(order => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${order.OrderId}</td>
+                            <td>${order.OrderDate}</td>
+                            <td>${JSON.stringify(order.Items)}</td>
+                        `;
+                        orderTableBody.appendChild(row);
+                    });
+                });
+        }
+
+        function fetchUpcomingOrders() {
+            fetch(`${API_URL}/upcoming-orders`)
+                .then(response => response.json())
+                .then(data => {
+                    const upcomingOrderTableBody = document.getElementById('upcoming-orders-table-body');
+                    upcomingOrderTableBody.innerHTML = '';
+                    data.forEach(order => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${order.OrderId}</td>
+                            <td>${order.ExpectedDate}</td>
+                            <td>${JSON.stringify(order.Items)}</td>
+                        `;
+                        upcomingOrderTableBody.appendChild(row);
+                    });
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchItems();
+            fetchOrderHistory();
+            fetchUpcomingOrders();
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Inventory Management</h1>
+        <form onsubmit="event.preventDefault(); addItem();">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="quantity">Quantity</label>
+                <input type="number" class="form-control" id="quantity" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Item</button>
+        </form>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="items-table-body"></tbody>
+        </table>
+
+        <h2 class="mt-5">Create Order</h2>
+        <button class="btn btn-success" onclick="createOrder()">Create Order</button>
+
+        <h2 class="mt-5">Order History</h2>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Order Date</th>
+                    <th>Items</th>
+                </tr>
+            </thead>
+            <tbody id="order-history-table-body"></tbody>
+        </table>
+
+        <h2 class="mt-5">Upcoming Orders</h2>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Expected Date</th>
+                    <th>Items</th>
+                </tr>
+            </thead>
+            <tbody id="upcoming-orders-table-body"></tbody>
+        </table>
+    </div>
+</body>
+</html>
